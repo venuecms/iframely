@@ -42,12 +42,11 @@ app.use(function(req, res, next) {
   next();
 });
 
-app.use(cacheMiddleware);
-
 // Require an API key for the data endpoints when IFRAMELY_API_KEY is set,
 // so the server can't be used by just anyone. The key is shared only with
 // trusted server-side callers and is never exposed to browsers. Accepts the key
 // via `Authorization: Bearer <key>`, `X-Api-Key: <key>`, or `?_key=<key>`.
+// NOTE: registered BEFORE cacheMiddleware so cached responses can't bypass auth.
 const IFRAMELY_API_KEY = process.env.IFRAMELY_API_KEY;
 if (IFRAMELY_API_KEY) {
   const PROTECTED_PREFIXES = ['/iframely', '/oembed', '/reader.js'];
@@ -75,6 +74,8 @@ if (IFRAMELY_API_KEY) {
     next();
   });
 }
+
+app.use(cacheMiddleware);
 
 import apiViews from './modules/api/views.js';
 import debugViews from './modules/debug/views.js';

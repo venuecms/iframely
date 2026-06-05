@@ -38,4 +38,17 @@ export default {
             summary: ["allow"],
         },
     },
+
+    // Provider options. Mirrors the config.js defaults and adds a YouTube Data
+    // API key (read from env, not hard-coded). When YOUTUBE_API_KEY is set,
+    // YouTube videos resolve via the Data API (googleapis.com/youtube/v3) which
+    // has a generous quota, instead of the public oEmbed endpoint that
+    // intermittently 429s from shared cloud egress IPs. No-op when unset.
+    providerOptions: {
+        readability: {},
+        "twitter.status": {},
+        youtube: {
+            api_key: process.env.YOUTUBE_API_KEY,
+        },
+    },
 };

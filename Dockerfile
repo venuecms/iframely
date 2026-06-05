@@ -16,6 +16,8 @@ RUN corepack enable
 
 ## Utilize docker layer cache
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /iframely/
+# Patches must be present before install, since pnpm applies patchedDependencies during install.
+COPY patches /iframely/patches
 RUN pnpm install --frozen-lockfile --prod
 
 COPY . /iframely

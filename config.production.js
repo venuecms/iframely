@@ -50,5 +50,10 @@ export default {
         youtube: {
             api_key: process.env.YOUTUBE_API_KEY,
         },
+        // Default Bandcamp embeds to the compact ("slim", size=small ~42px)
+        // player instead of the large artwork player.
+        bandcamp: {
+            layout: "slim",
+        },
     },
 };

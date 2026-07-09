@@ -12,6 +12,7 @@ if (!CONFIG.baseAppUrl) {
 
 import express from 'express';
 import * as jsonxml from 'jsontoxml';
+import crypto from 'crypto';
 
 const app = express();
 
@@ -40,6 +41,39 @@ app.use(function(req, res, next) {
   res.setHeader('X-Powered-By', 'Iframely');
   next();
 });
+
+// Require an API key for the data endpoints when IFRAMELY_API_KEY is set,
+// so the server can't be used by just anyone. The key is shared only with
+// trusted server-side callers and is never exposed to browsers. Accepts the key
+// via `Authorization: Bearer <key>`, `X-Api-Key: <key>`, or `?_key=<key>`.
+// NOTE: registered BEFORE cacheMiddleware so cached responses can't bypass auth.
+const IFRAMELY_API_KEY = process.env.IFRAMELY_API_KEY;
+if (IFRAMELY_API_KEY) {
+  const PROTECTED_PREFIXES = ['/iframely', '/oembed', '/reader.js'];
+  const expected = Buffer.from(IFRAMELY_API_KEY);
+  app.use(function(req, res, next) {
+    const isProtected = PROTECTED_PREFIXES.some(function(p) {
+      return req.path === p || req.path.indexOf(p + '/') === 0;
+    });
+    if (!isProtected) {
+      return next();
+    }
+
+    const header = req.headers['authorization'] || '';
+    const bearer = header.indexOf('Bearer ') === 0 ? header.slice(7) : '';
+    const provided = String(bearer || req.headers['x-api-key'] || req.query._key || '');
+
+    const providedBuf = Buffer.from(provided);
+    const ok = providedBuf.length === expected.length
+      && crypto.timingSafeEqual(providedBuf, expected);
+
+    if (!ok) {
+      res.status(401).json({ error: { source: 'iframely', code: 401, message: 'Unauthorized' } });
+      return;
+    }
+    next();
+  });
+}
 
 app.use(cacheMiddleware);
 
